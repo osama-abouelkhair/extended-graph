@@ -21,10 +21,10 @@ class Main {
 //        graph.addEdge(13, 10);
         Supplier<Integer> randomGenerator = () -> {
             Random r = new Random();
-            return r.nextInt(100);
+            return r.nextInt(10);
         };
 
-        IntStream.range(0, 1000).forEach(v -> {
+        IntStream.range(0, 10).forEach(v -> {
             int rand1 = randomGenerator.get();
             int rand2 = randomGenerator.get();
             if (rand1 != rand2 && graph.getEdges(rand1).size() < 4)
