@@ -113,17 +113,19 @@ public class Graph<T> {
             node
                     .getEdges()
                     .forEach(edgeNode -> {
-                        if (path.values().stream().noneMatch(v -> v == edgeNode.value)) {
-                            path.put(edgeNode.value, node.value);
-                        }
                         if (visited.get(edgeNode.value) == null || visited.get(edgeNode.value).equals(false)) {
-                            nodes.offer(vertices.stream()
-                                    .filter(nodeFilter -> nodeFilter.value == edgeNode.value)
-                                    .findFirst()
-                                    .get());
-                            System.out.print("offer " + edgeNode.value + " \nQueue: ");
-                            nodes.stream().map(n -> n.value).forEach(System.out::print);
-                            System.out.println();
+                            if (path.keySet().stream().noneMatch(v -> v == edgeNode.value)) {
+                                path.put(edgeNode.value, node.value);
+
+                                nodes.offer(vertices.stream()
+                                        .filter(nodeFilter -> nodeFilter.value == edgeNode.value)
+                                        .findFirst()
+                                        .get());
+
+                                System.out.print("offer " + edgeNode.value + " \nQueue: ");
+                                nodes.stream().map(n -> n.value).forEach(System.out::print);
+                                System.out.println();
+                            }
                         }
 //                            Node<T> nextNode = this.vertices.stream()
 //                                    .filter(nodeFilter -> nodeFilter.value == edgeNode.value)

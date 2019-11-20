@@ -1,3 +1,4 @@
+import org.assertj.core.api.AbstractMapAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -7,7 +8,7 @@ import static org.assertj.core.api.Assertions.*;
 
 class GraphTest {
 
-    Graph graph;
+    Graph<Integer> graph;
 
     @BeforeEach
     void setUp() {
@@ -44,6 +45,16 @@ class GraphTest {
 
     @Test
     void breadthFirstSearch() {
+        graph.addEdge(0, 5);
+        graph.addEdge(5, 7);
+        graph.addEdge(0, 7);
+        graph.addEdge(7, 8);
+        Map nodes = graph.breadthFirstSearch((node) -> {});
+        assertThat(nodes)
+                .hasSize(3)
+                .containsEntry(5, 0)
+                .containsEntry(7, 0)
+                .containsEntry(8, 7);
     }
 
     @Test
