@@ -50,7 +50,6 @@ public class Graph<T> {
     Map depthFirstSearch(Consumer consumer) {
         Map visited = new HashMap<T, Boolean>();
         Map path = new HashMap();
-        //this.vertices.forEach(node -> visited.put(node.value, false));
         depthFirstSearch(consumer, visited, path, this.source);
         return path;
     }
@@ -127,12 +126,6 @@ public class Graph<T> {
                                 System.out.println();
                             }
                         }
-//                            Node<T> nextNode = this.vertices.stream()
-//                                    .filter(nodeFilter -> nodeFilter.value == edgeNode.value)
-//                                    .findFirst().orElse(null);
-//                            if (nextNode!= null && node.value != nextNode.value) {
-//                                breadthFirstSearch(consumer, nodes, visited, path);
-//                            }
                     });
         }
     }
