@@ -1,128 +1,109 @@
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public class Graph<T> {
 
-    private Node<T> source;
-    private HashSet<Node<T>> vertices;
+    private Map<Node<T>, Set<Node>> nodes = new HashMap<>();
 
-    Graph(T source) {
-        this.source = new Node<T>(source);
-        vertices = new HashSet<>();
-        vertices.add(this.source);
+    private Graph() {
+    }
+
+    public static Graph emptyGraph() {
+        return new Graph<>();
     }
 
     void addEdge(T v, T w) {
-        vertices
-                .stream()
-                .filter(node -> node.value == v)
-                .findFirst()
-                .map(node -> {
-                    node.addEdge(w);
-                    if (this.vertices.stream().noneMatch(edgeNode -> edgeNode.value == w)) {
-                        Node<T> edgeNode = new Node(w);
-                        edgeNode.addEdge(v);
-                        this.vertices.add(edgeNode);
-                    } else {
-                        vertices
-                                .stream()
-                                .filter(wNode -> wNode.value == w)
-                                .findFirst()
-                                .map(wNode -> {
-                                    wNode.addEdge(v);
-                                    return vertices;
-                                });
-                    }
-                    return vertices;
-                })
-                .orElseGet(() -> {
-                    Node node = new Node(v);
-                    node.addEdge(w);
-                    vertices.add(node);
-                    Node edgeNode = new Node(w);
-                    vertices.add(edgeNode);
-                    edgeNode.addEdge(v);
-                    return vertices;
-                });
+        Node sourceNode = new Node<>(v);
+        Node destinationNode = new Node<>(w);
+        addEdge(sourceNode, destinationNode);
+        addEdge(destinationNode, sourceNode);
+
     }
 
-    Map depthFirstSearch(Consumer consumer) {
-        Map visited = new HashMap<T, Boolean>();
+    private void addEdge(Node firstNode, Node secondNode) {
+        nodes.merge(firstNode, new HashSet<>(Collections.singleton(secondNode)), (currentNode, newNode) -> {
+            currentNode.addAll(newNode);
+            return currentNode;
+        });
+    }
+
+    Map depthFirstSearch(T source, Consumer consumer) {
+        Set visited = new HashSet<T>();
         Map path = new HashMap();
-        depthFirstSearch(consumer, visited, path, this.source);
+        depthFirstSearch(consumer, visited, path, new Node<>(source));
         return path;
     }
 
-    private void depthFirstSearch(Consumer consumer, Map visited, Map path, Node<T> node) {
-        if (visited.get(node.value) == null || visited.get(node.value).equals(false)) {
-            visited.put(node.value, true);
+    private void depthFirstSearch(Consumer<T> consumer, Set<T> visited, Map<T, T> path, Node<T> node) {
+        if (!visited.contains(node.value)) {
+            visited.add(node.value);
             consumer.accept(node.value);
-            node
-                    .getEdges()
+            nodes.get(node)
                     .forEach(edgeNode -> {
-                        if (!path.values().stream().filter(v -> v == edgeNode.value).findFirst().isPresent()) {
-                            path.put(edgeNode.value, node.value);
-                        }
-                        Node nextNode = this.vertices.stream()
-                                .filter(nodeFilter -> nodeFilter.value == edgeNode.value)
-                                .findFirst()
-                                .get();
-                        if (node.value != nextNode.value) {
-                            depthFirstSearch(consumer, visited, path, nextNode);
-                        }
-                    });
+                                if (path.values().stream().noneMatch(v -> v == edgeNode.value)) {
+                                    path.put((T) edgeNode.value, node.value);
+                                }
+                                Node nextNode = this.nodes.keySet().stream()
+                                        .filter(nodeFilter -> nodeFilter.value == edgeNode.value)
+                                        .findFirst()
+                                        .get();
+                                if (node.value != nextNode.value) {
+                                    depthFirstSearch(consumer, visited, path, nextNode);
+                                }
+                            }
+                    );
         }
     }
 
-    Boolean hasPathTo(T v) {
-        Map<T, T> path = this.depthFirstSearch(noop -> {
+
+    Boolean hasPathTo(T source, T destination) {
+        Map path = this.depthFirstSearch(source, noop -> {
         });
         path.forEach((x, y) -> System.out.println("key : " + x + " value : " + y));
-        if (path.containsKey(v)) {
-            System.out.print(v);
-            T edge = path.get(v);
+        if (path.containsKey(destination)) {
+            System.out.print(destination);
+            T edge = (T) path.get(destination);
             while (edge != null) {
                 System.out.print(" <--- " + edge);
-                edge = path.get(edge);
+                edge = (T) path.get(edge);
             }
             System.out.println();
         }
-        return path.keySet().stream().filter(value -> value == v).findFirst().isPresent();
+        return path.keySet().stream().filter(value -> value == destination).findFirst().isPresent();
     }
 
-    Map breadthFirstSearch(Consumer consumer) {
-        Map visited = new HashMap<T, Boolean>();
+    Map breadthFirstSearch(T source, Consumer consumer) {
+        Set visited = new HashSet<T>();
         Deque<Node<T>> nodes = new ArrayDeque<>();
-        nodes.offer(this.source);
+        Node sourceNode = new Node<>(source);
+        nodes.offer(sourceNode);
         Map path = new HashMap();
-        //this.vertices.forEach(node -> visited.put(node.value, false));
         breadthFirstSearch(consumer, nodes, visited, path);
         return path;
     }
 
-    private void breadthFirstSearch(Consumer<T> consumer, Queue<Node<T>> nodes, Map<T, Boolean> visited, Map<T, T> path) {
-        while (!nodes.isEmpty()) {
-            Node<T> node = nodes.poll();
+    private void breadthFirstSearch(Consumer<T> consumer, Queue<Node<T>> nodesToTraverse, Set<T> visited, Map<T, T> path) {
+        while (!nodesToTraverse.isEmpty()) {
+            Node<T> node = nodesToTraverse.poll();
             System.out.print("poll " + node.value + " \nQueue: ");
-            nodes.stream().map(n -> n.value).forEach(System.out::print);
+            nodesToTraverse.stream().map(n -> n.value).forEach(System.out::print);
             System.out.println();
-            visited.put(node.value, true);
+            visited.add(node.value);
             consumer.accept(node.value);
-            node
-                    .getEdges()
+            nodes
+                    .get(node)
                     .forEach(edgeNode -> {
-                        if (visited.get(edgeNode.value) == null || visited.get(edgeNode.value).equals(false)) {
+                        if (!visited.contains(edgeNode.value)) {
                             if (path.keySet().stream().noneMatch(v -> v == edgeNode.value)) {
-                                path.put(edgeNode.value, node.value);
+                                path.put((T) edgeNode.value, node.value);
 
-                                nodes.offer(vertices.stream()
+                                nodesToTraverse.offer(nodes.keySet().stream()
                                         .filter(nodeFilter -> nodeFilter.value == edgeNode.value)
                                         .findFirst()
                                         .get());
 
                                 System.out.print("offer " + edgeNode.value + " \nQueue: ");
-                                nodes.stream().map(n -> n.value).forEach(System.out::print);
+                                nodesToTraverse.stream().map(n -> n.value).forEach(System.out::print);
                                 System.out.println();
                             }
                         }
@@ -130,31 +111,28 @@ public class Graph<T> {
         }
     }
 
-    Set<T> getEdges(T value) {
-        Node node = this.vertices.stream().filter(foundNode -> foundNode.value == value).findFirst().orElseGet(() -> null);
-        if (node != null)
-            return (Set<T>) node.getEdges().stream().map(e -> ((Node) e).value).collect(Collectors.toSet());
-
-        return new HashSet<>();
+    Optional<Set<T>> getEdges(T value) {
+        return Optional.of((Set) nodes.get(new Node<>(value)));
     }
 
     private class Node<T> {
         private T value;
-        private Set<Node<T>> edges;
 
         Node(T value) {
             this.value = value;
-            edges = new HashSet<>();
         }
 
-        Set<Node<T>> addEdge(T value) {
-            Node node = new Node(value);
-            this.edges.add(node);
-            return edges;
+        @Override
+        public boolean equals(Object o) {
+            if (this.value == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Node<?> node = (Node<?>) o;
+            return Objects.equals(value, node.value);
         }
 
-        Set<Node<T>> getEdges() {
-            return edges;
+        @Override
+        public int hashCode() {
+            return Objects.hash(value);
         }
     }
 }

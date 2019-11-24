@@ -11,14 +11,14 @@ class GraphTest {
 
     @BeforeEach
     void setUp() {
-        graph = new Graph<>(0);
+        graph = Graph.emptyGraph();
     }
 
     @Test
     void addEdge() {
         graph.addEdge(0, 5);
-        assertThat(graph.getEdges(0).toArray()).isEqualTo(new Integer[]{5});
-        assertThat(graph.getEdges(5).toArray()).isEqualTo(new Integer[]{0});
+        assertThat(graph.getEdges(0)).hasValueSatisfying(edges -> assertThat(edges).contains(5));
+        assertThat(graph.getEdges(5)).hasValueSatisfying(edges -> assertThat(edges).contains(0));
     }
 
     @Test
@@ -27,7 +27,7 @@ class GraphTest {
         graph.addEdge(5, 7);
         graph.addEdge(0, 7);
         graph.addEdge(7, 8);
-        Map nodes = graph.depthFirstSearch((node) -> {});
+        Map nodes = graph.depthFirstSearch(0, (node) -> {});
         assertThat(nodes)
                 .hasSize(3)
                 .containsEntry(5, 0)
@@ -39,7 +39,7 @@ class GraphTest {
     void hasPathTo() {
         graph.addEdge(0, 5);
         graph.addEdge(5, 6);
-        assertThat(graph.hasPathTo(6)).isTrue();
+        assertThat(graph.hasPathTo(0, 6)).isTrue();
     }
 
     @Test
@@ -48,7 +48,7 @@ class GraphTest {
         graph.addEdge(5, 7);
         graph.addEdge(0, 7);
         graph.addEdge(7, 8);
-        Map nodes = graph.breadthFirstSearch((node) -> {});
+        Map nodes = graph.breadthFirstSearch(0, (node) -> {});
         assertThat(nodes)
                 .hasSize(3)
                 .containsEntry(5, 0)
@@ -61,7 +61,6 @@ class GraphTest {
         graph.addEdge(0, 5);
         graph.addEdge(5, 6);
         graph.addEdge(0, 7);
-        assertThat(graph.getEdges(0).toArray()).isEqualTo(new Integer[]{5, 7});
-
+        assertThat(graph.getEdges(0)).hasValueSatisfying(edges -> assertThat(edges).contains(5).contains(7));
     }
 }
